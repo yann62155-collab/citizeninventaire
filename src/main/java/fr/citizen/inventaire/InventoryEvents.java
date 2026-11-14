@@ -87,6 +87,17 @@ public class InventoryEvents {
         boolean restoreInv = invLost > 0 && SnapshotStore.isEmpty(player);
         boolean restoreEnder = enderLost > 0 && SnapshotStore.isEnderEmpty(player);
         boolean restoreXp = SnapshotStore.hasXp(last) && SnapshotStore.hasNoXp(player);
+        // Position : seulement si le joueur n'était pas mort à la déconnexion et qu'il réapparaît loin.
+        double dist = last.contains("Pos") ? SnapshotStore.distanceTo(player, last) : 0;
+        boolean restorePos = Config.RESTORE_POSITION.get() && last.contains("Pos")
+                && !last.getCompound("Pos").getBoolean("Dead") && dist > Config.POSITION_TOLERANCE.get();
+        if (restorePos && SnapshotStore.teleportTo(player, last)) {
+            String d = dist == Double.MAX_VALUE ? "autre dimension" : (int) dist + " blocs";
+            player.sendSystemMessage(Component.literal("[Citizen] Tu as été replacé là où tu t'étais déconnecté.").withStyle(ChatFormatting.GOLD));
+            alert(server, player.getGameProfile().getName() + " (" + player.getDisplayName().getString()
+                    + ") réapparaissait décalé (" + d + ") : replacé en " + SnapshotStore.describePos(last) + ".", ChatFormatting.YELLOW);
+        }
+
         if (!restoreInv && !restoreEnder && !restoreXp) return;
 
         String name = player.getGameProfile().getName();

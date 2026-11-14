@@ -98,6 +98,15 @@ public final class SnapshotStore {
         tag.putInt("XpLevel", player.experienceLevel);
         tag.putFloat("XpProgress", player.experienceProgress);
         tag.putInt("XpTotal", player.totalExperience);
+        CompoundTag pos = new CompoundTag();
+        pos.putString("Dim", player.level().dimension().location().toString());
+        pos.putDouble("X", player.getX());
+        pos.putDouble("Y", player.getY());
+        pos.putDouble("Z", player.getZ());
+        pos.putFloat("Yaw", player.getYRot());
+        pos.putFloat("Pitch", player.getXRot());
+        pos.putBoolean("Dead", player.isDeadOrDying());
+        tag.put("Pos", pos);
         tag.putLong("Time", System.currentTimeMillis());
         return tag;
     }
@@ -123,6 +132,34 @@ public final class SnapshotStore {
         }
         player.inventoryMenu.broadcastChanges();
         player.containerMenu.broadcastChanges();
+    }
+
+    /** Distance entre le joueur et la position de la photo (Double.MAX_VALUE si autre dimension). */
+    public static double distanceTo(ServerPlayer player, CompoundTag tag) {
+        CompoundTag pos = tag.getCompound("Pos");
+        if (!player.level().dimension().location().toString().equals(pos.getString("Dim"))) return Double.MAX_VALUE;
+        return Math.sqrt(player.distanceToSqr(pos.getDouble("X"), pos.getDouble("Y"), pos.getDouble("Z")));
+    }
+
+    /** Téléporte le joueur à la position de la photo. Renvoie false si impossible. */
+    public static boolean teleportTo(ServerPlayer player, CompoundTag tag) {
+        if (!tag.contains("Pos")) return false;
+        CompoundTag pos = tag.getCompound("Pos");
+        var rl = net.minecraft.resources.ResourceLocation.tryParse(pos.getString("Dim"));
+        if (rl == null) return false;
+        var key = net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, rl);
+        net.minecraft.server.level.ServerLevel level = player.getServer().getLevel(key);
+        if (level == null) return false;
+        player.teleportTo(level, pos.getDouble("X"), pos.getDouble("Y"), pos.getDouble("Z"),
+                pos.getFloat("Yaw"), pos.getFloat("Pitch"));
+        player.fallDistance = 0f;
+        return true;
+    }
+
+    public static String describePos(CompoundTag tag) {
+        CompoundTag pos = tag.getCompound("Pos");
+        return String.format(java.util.Locale.ROOT, "%d %d %d", (int) Math.floor(pos.getDouble("X")),
+                (int) Math.floor(pos.getDouble("Y")), (int) Math.floor(pos.getDouble("Z")));
     }
 
     // ---------- fichiers ----------

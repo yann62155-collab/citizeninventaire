@@ -18,6 +18,7 @@ import java.util.List;
  * /inventaire restaurer <joueur> <numéro> [tout|inventaire|ender|xp]
  *     -> remet la photo n° X (tout par défaut ; l'état actuel est sauvegardé avant)
  * /inventaire sauver <joueur>              -> photo manuelle
+ * /inventaire position <joueur>            -> remet le joueur où il s'est déconnecté la dernière fois
  * Réservé aux op (niveau 2). Le joueur doit être connecté, sur le bon personnage.
  */
 public final class InventoryCommands {
@@ -37,6 +38,9 @@ public final class InventoryCommands {
                                         .then(Commands.literal("inventaire").executes(c -> restore(c, true, false, false)))
                                         .then(Commands.literal("ender").executes(c -> restore(c, false, true, false)))
                                         .then(Commands.literal("xp").executes(c -> restore(c, false, false, true))))))
+                .then(Commands.literal("position")
+                        .then(Commands.argument("joueur", EntityArgument.player())
+                                .executes(InventoryCommands::position)))
                 .then(Commands.literal("sauver")
                         .then(Commands.argument("joueur", EntityArgument.player())
                                 .executes(InventoryCommands::save))));
@@ -87,6 +91,18 @@ public final class InventoryCommands {
         InventoryEvents.alert(ctx.getSource().getServer(), by + " a restauré " + what + " de "
                 + target.getGameProfile().getName() + " (sauvegarde du " + s.time().format(SnapshotStore.DISPLAY_TS) + ").",
                 ChatFormatting.YELLOW);
+        return 1;
+    }
+
+    private static int position(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        ServerPlayer target = EntityArgument.getPlayer(ctx, "joueur");
+        var last = SnapshotStore.readLogout(target);
+        if (last == null || !SnapshotStore.teleportTo(target, last)) {
+            ctx.getSource().sendFailure(Component.literal("Aucune position de déconnexion connue pour " + target.getDisplayName().getString()));
+            return 0;
+        }
+        ctx.getSource().sendSuccess(() -> Component.literal(target.getDisplayName().getString()
+                + " replacé en " + SnapshotStore.describePos(last) + "."), true);
         return 1;
     }
 

@@ -26,6 +26,14 @@ public final class Config {
             .comment("Séparer les photos par personnage (nom affiché). Mettre false si tu retires CharacterSelect.")
             .define("perCharacter", true);
 
+    public static final ModConfigSpec.BooleanValue RESTORE_POSITION = B
+            .comment("Remettre le joueur à l'endroit où il s'est déconnecté s'il réapparaît loin (ex. corps de CharacterSelect déplacé).")
+            .define("restorePosition", true);
+
+    public static final ModConfigSpec.IntValue POSITION_TOLERANCE = B
+            .comment("Distance (en blocs) à partir de laquelle on considère que le joueur a été décalé.")
+            .defineInRange("positionTolerance", 32, 2, 10000);
+
     public static final ModConfigSpec SPEC = B.build();
 
     private Config() {}

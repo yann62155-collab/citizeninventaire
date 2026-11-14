@@ -4,7 +4,7 @@ license="All Rights Reserved"
 
 [[mods]]
 modId="citizeninventaire"
-version="1.2.0"
+version="1.3.0"
 displayName="Citizen Inventaire"
 authors="Ishawakiii"
 description='''Sauvegarde et restauration des inventaires des joueurs (serveur Citizen).'''
